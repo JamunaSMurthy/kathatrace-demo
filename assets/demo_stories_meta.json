@@ -1,0 +1,65 @@
+[
+  {
+    "id": "stratagem-of-punyasena",
+    "source": "The Ocean of Story",
+    "title": "The Stratagem of King Puṇyasena",
+    "folder": "The Ocean of Story/The Stratagem of King Puṇyasena",
+    "intended_meaning": "Strategy can defeat force."
+  },
+  {
+    "id": "fall-of-sunda-upasunda",
+    "source": "The Ocean of Story",
+    "title": "The Fall of Sunda and Upasunda",
+    "folder": "The Ocean of Story/The Fall of Sunda and Upasunda",
+    "intended_meaning": "Jealousy destroys strength."
+  },
+  {
+    "id": "disguise-of-vasavadatta",
+    "source": "The Ocean of Story",
+    "title": "The Disguise of Vāsavadattā",
+    "folder": "The Ocean of Story/The Disguise of Vāsavadattā",
+    "intended_meaning": "Perseverance protects future success."
+  },
+  {
+    "id": "wolf-and-lamb",
+    "source": "Aesop’s Fables",
+    "title": "The Wolf and the Lamb",
+    "folder": "Aesop’s Fables/The Wolf and the Lamb",
+    "intended_meaning": "Power can ignore justice."
+  },
+  {
+    "id": "peacock-and-crane",
+    "source": "Aesop’s Fables",
+    "title": "The Peacock and the Crane",
+    "folder": "Aesop’s Fables/The Peacock and the Crane",
+    "intended_meaning": "Ability matters more than beauty."
+  },
+  {
+    "id": "cat-and-birds",
+    "source": "Aesop’s Fables",
+    "title": "The Cat and the Birds",
+    "folder": "Aesop’s Fables/The Cat and the Birds",
+    "intended_meaning": "Beware deceptive appearances."
+  },
+  {
+    "id": "monkey-and-wedge",
+    "source": "Panchatantra",
+    "title": "The Monkey and the Wedge",
+    "folder": "Panchatantra/The Monkey and the Wedge",
+    "intended_meaning": "Do not meddle without understanding."
+  },
+  {
+    "id": "jackal-and-drum",
+    "source": "Panchatantra",
+    "title": "The Jackal and the Drum",
+    "folder": "Panchatantra/The Jackal and the Drum",
+    "intended_meaning": "Inquiry overcomes fear."
+  },
+  {
+    "id": "merchant-fall-rise",
+    "source": "Panchatantra",
+    "title": "The Fall and Rise of a Merchant",
+    "folder": "Panchatantra/The Fall and Rise of a Merchant",
+    "intended_meaning": "Humility restores honor."
+  }
+]

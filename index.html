@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KathaTrace — Trace the Semantic Trajectory Gap</title>
+<meta name="description" content="Interactive demo of KathaTrace: diagnose semantic trajectory collapse in generated storyboards across text-only, image-only, and text+image evidence conditions.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #0b0a12;
+    --bg-2: #120f1d;
+    --panel: #161228;
+    --panel-2: #1b1730;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #ece8f5;
+    --text-dim: #a8a2c0;
+    --text-faint: #6e6a87;
+    --accent: #8b5cf6;
+    --accent-2: #ec4899;
+    --accent-3: #f59e0b;
+    --gold: #f0b85f;
+    --collapse: #f4525a;
+    --recover: #3ed6a0;
+    --grad-1: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f59e0b 100%);
+    --grad-soft: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(236,72,153,0.12));
+    --radius: 18px;
+    --serif: "Fraunces", serif;
+    --mono: "JetBrains Mono", monospace;
+    --sans: "Inter", -apple-system, sans-serif;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+
+  body{
+    background: radial-gradient(ellipse 90% 60% at 20% -10%, rgba(139,92,246,0.18), transparent 60%),
+                radial-gradient(ellipse 80% 50% at 100% 10%, rgba(236,72,153,0.12), transparent 60%),
+                var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display:block; }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    position: sticky; top:0; z-index: 50;
+    backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(11,10,18,0.72);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner{
+    display:flex; align-items:center; justify-content: space-between;
+    padding: 16px 28px; max-width: 1180px; margin: 0 auto;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:40px; height:40px; border-radius: 12px;
+    background: var(--grad-1);
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--serif); font-weight:700; font-size:1.2rem; color:#fff;
+    box-shadow: 0 8px 24px rgba(139,92,246,0.35);
+  }
+  .brand-text .title{ font-family: var(--serif); font-weight:600; font-size:1.15rem; letter-spacing:0.01em; }
+  .brand-text .sub{ font-family: var(--mono); font-size:0.68rem; letter-spacing: 0.12em; color: var(--text-faint); text-transform: uppercase; }
+
+  .nav-links{ display:flex; gap: 26px; align-items:center; }
+  .nav-links a{ font-size: 0.88rem; color: var(--text-dim); transition: color 0.15s; }
+  .nav-links a:hover{ color: var(--text); }
+  .nav-cta{
+    padding: 8px 16px; border-radius: 999px;
+    background: var(--grad-1); color:#fff !important; font-weight:600; font-size:0.85rem;
+  }
+  @media (max-width: 760px){ .nav-links{ display:none; } }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding: 72px 0 40px; }
+  .pill{
+    display:inline-flex; align-items:center; gap:10px;
+    border: 1px solid var(--border-strong);
+    background: var(--panel);
+    border-radius: 999px; padding: 8px 18px;
+    font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.08em;
+    color: var(--text-dim); text-transform: uppercase;
+  }
+  .pill .dot{ width:7px; height:7px; border-radius:50%; background: var(--recover); box-shadow: 0 0 8px var(--recover); }
+
+  .hero h1{
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2.4rem, 5.4vw, 4.2rem);
+    line-height: 1.05;
+    margin: 26px 0 22px;
+    letter-spacing: -0.01em;
+    max-width: 16ch;
+  }
+  .hero h1 em{
+    font-style: italic;
+    background: var(--grad-1);
+    -webkit-background-clip: text; background-clip:text; color: transparent;
+  }
+  .hero p.lede{ color: var(--text-dim); font-size: 1.08rem; max-width: 56ch; margin-bottom: 32px; }
+
+  .btn-row{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-bottom: 48px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px;
+    padding: 14px 26px; border-radius: 14px;
+    font-weight: 600; font-size: 0.95rem;
+    border: 1px solid transparent; cursor:pointer;
+  }
+  .btn-primary{ background: var(--grad-1); color:#fff; box-shadow: 0 10px 30px rgba(236,72,153,0.25); }
+  .btn-ghost{ background: var(--panel); border-color: var(--border-strong); color: var(--text); }
+  .btn:hover{ filter: brightness(1.08); }
+
+  .stat-strip{
+    display:grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow:hidden;
+  }
+  .stat-strip .cell{ background: var(--panel); padding: 20px 18px; }
+  .stat-strip .num{ font-family: var(--serif); font-size: 1.7rem; font-weight:600; color: var(--gold); }
+  .stat-strip .lab{ font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.08em; color: var(--text-faint); text-transform: uppercase; margin-top: 4px; }
+  @media (max-width: 760px){ .stat-strip{ grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- Section shell ---------- */
+  section{ padding: 64px 0; }
+  .section-head{ margin-bottom: 36px; max-width: 60ch; }
+  .eyebrow{ font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-3); margin-bottom: 12px; }
+  .section-head h2{ font-family: var(--serif); font-weight: 600; font-size: clamp(1.7rem, 3vw, 2.3rem); margin-bottom: 10px; }
+  .section-head p{ color: var(--text-dim); }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+
+  /* ---------- Step 1: story input ---------- */
+  .step-tag{
+    display:inline-flex; align-items:center; justify-content:center;
+    width: 30px; height: 30px; border-radius: 9px;
+    background: var(--grad-1); color:#fff; font-family: var(--mono); font-weight:700; font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+  .story-chips{ display:flex; flex-wrap:wrap; gap: 10px; margin: 18px 0; }
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    padding: 9px 16px 9px 8px; background: var(--panel-2); cursor: pointer;
+    font-size: 0.85rem; color: var(--text-dim); transition: all 0.15s;
+  }
+  .chip.active{ background: var(--grad-soft); border-color: rgba(236,72,153,0.4); color: var(--text); }
+  .chip .src{ font-family: var(--mono); font-size: 0.62rem; background: var(--border-strong); padding: 3px 7px; border-radius: 6px; color: var(--text-faint); }
+  .chip.active .src{ color: #fff; background: var(--accent-2); }
+
+  textarea.story-box{
+    width:100%; min-height: 110px; resize: vertical;
+    background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: 12px;
+    color: var(--text); font-family: var(--sans); font-size: 0.95rem; padding: 16px;
+    margin-top: 6px;
+  }
+  .field-label{ font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); margin: 18px 0 8px; }
+
+  .moral-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .moral-tag{
+    font-family: var(--mono); font-size: 0.78rem; padding: 7px 14px; border-radius: 999px;
+    background: rgba(245,158,11,0.12); color: var(--gold); border: 1px solid rgba(245,158,11,0.3);
+  }
+
+  /* ---------- Step 2: scene trace ---------- */
+  .scene-trace{ display:flex; align-items:stretch; gap: 0; overflow-x:auto; padding: 8px 4px 14px; }
+  .scene-card{
+    flex: 0 0 200px; background: var(--panel-2); border:1px solid var(--border);
+    border-radius: 14px; overflow:hidden; position:relative;
+  }
+  .scene-card img{ width:100%; height: 150px; object-fit: cover; opacity:0.92; }
+  .scene-card .idx{
+    position:absolute; top:10px; left:10px; font-family: var(--mono); font-size:0.7rem;
+    background: rgba(0,0,0,0.55); padding: 3px 8px; border-radius: 6px; color:#fff;
+  }
+  .scene-card .cap{ padding: 12px 14px; font-size: 0.8rem; color: var(--text-dim); }
+
+  .scene-card.skeleton img{ visibility:hidden; }
+  .scene-card.skeleton{
+    background: linear-gradient(100deg, var(--panel-2) 30%, #251f3d 50%, var(--panel-2) 70%);
+    background-size: 220% 100%;
+    animation: blink-loading 1.1s ease-in-out infinite;
+  }
+  .scene-card.skeleton .cap{ color: var(--text-faint); }
+  @keyframes blink-loading{
+    0%{ background-position: 200% 0; }
+    100%{ background-position: -200% 0; }
+  }
+
+  .scene-trace.revealed .scene-card,
+  .scene-trace.revealed .transition-link{
+    animation: fade-up 0.45s ease-out both;
+  }
+  @keyframes fade-up{
+    from{ opacity:0; transform: translateY(8px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  #compose-btn.working{ opacity:0.75; cursor: default; }
+  #compose-btn .spinner{
+    display:inline-block; width:14px; height:14px; border-radius:50%;
+    border: 2px solid rgba(255,255,255,0.4); border-top-color:#fff;
+    animation: spin 0.7s linear infinite; vertical-align:-2px; margin-right:6px;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .transition-link{
+    flex: 0 0 86px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 6px; position: relative;
+  }
+  .transition-link .arrow{ color: var(--text-faint); font-size: 1.3rem; }
+  .transition-link .dim{
+    font-family: var(--mono); font-size: 0.62rem; text-transform:uppercase; letter-spacing: 0.06em;
+    color: var(--text-faint); text-align:center;
+  }
+  .badge{
+    font-family: var(--mono); font-size: 0.62rem; padding: 3px 9px; border-radius: 999px; font-weight:600;
+  }
+  .badge.collapse{ background: rgba(244,82,90,0.15); color: var(--collapse); border: 1px solid rgba(244,82,90,0.4); }
+  .badge.recover{ background: rgba(62,214,160,0.15); color: var(--recover); border: 1px solid rgba(62,214,160,0.4); }
+
+  /* ---------- Step 3: evidence toggle ---------- */
+  .evidence-toggle{ display:flex; gap: 10px; margin-bottom: 26px; flex-wrap:wrap; }
+  .ev-btn{
+    border: 1px solid var(--border-strong); background: var(--panel-2);
+    border-radius: 12px; padding: 12px 20px; cursor:pointer; color: var(--text-dim);
+    font-size: 0.88rem; font-weight: 600; transition: all 0.15s;
+  }
+  .ev-btn.active{ background: var(--grad-1); color:#fff; border-color: transparent; box-shadow: 0 8px 20px rgba(236,72,153,0.25); }
+
+  .recov-bars{ display:flex; flex-direction:column; gap: 16px; }
+  .recov-row{ display:grid; grid-template-columns: 130px 1fr 56px; align-items:center; gap: 14px; }
+  .recov-row .dlabel{ font-size: 0.85rem; color: var(--text-dim); }
+  .recov-track{ height: 10px; background: var(--bg-2); border-radius: 999px; overflow:hidden; border: 1px solid var(--border); }
+  .recov-fill{ height:100%; border-radius: 999px; background: var(--grad-1); transition: width 0.5s cubic-bezier(.2,.8,.2,1); }
+  .recov-row .pct{ font-family: var(--mono); font-size: 0.85rem; text-align:right; color: var(--text); }
+
+  .stg-callout{
+    margin-top: 26px; padding: 18px 22px; border-radius: 14px;
+    background: rgba(244,82,90,0.08); border: 1px solid rgba(244,82,90,0.3);
+    display:flex; align-items:center; justify-content:space-between; gap: 16px; flex-wrap:wrap;
+  }
+  .stg-callout .num{ font-family: var(--serif); font-size: 2rem; font-weight:700; color: var(--collapse); }
+  .stg-callout .lab{ font-size: 0.85rem; color: var(--text-dim); max-width: 40ch; }
+
+  /* ---------- Gallery ---------- */
+  .gallery-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .gallery-grid figure{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow:hidden; }
+  .gallery-grid img{ width:100%; height: 170px; object-fit: cover; }
+  .gallery-grid figcaption{ padding: 14px 16px; font-size: 0.82rem; color: var(--text-dim); }
+  .gallery-grid figcaption strong{ display:block; color: var(--text); font-size: 0.88rem; margin-bottom: 3px; }
+  @media (max-width: 880px){ .gallery-grid{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px){ .gallery-grid{ grid-template-columns: 1fr; } }
+
+  /* ---------- Compare strip ---------- */
+  .compare-strip{ display:flex; gap: 18px; overflow-x:auto; padding-bottom: 10px; }
+  .compare-strip img{ flex: 0 0 min(420px, 80vw); border-radius: 14px; border: 1px solid var(--border); }
+
+  /* ---------- Footer ---------- */
+  footer{ border-top: 1px solid var(--border); padding: 40px 0 60px; margin-top: 30px; }
+  .footer-grid{ display:flex; justify-content:space-between; gap: 24px; flex-wrap:wrap; align-items:flex-start; }
+  .footer-links{ display:flex; gap: 22px; flex-wrap:wrap; }
+  .footer-links a{ font-size: 0.85rem; color: var(--text-dim); }
+  .footer-links a:hover{ color: var(--text); }
+  .copyright{ font-size: 0.78rem; color: var(--text-faint); margin-top: 22px; }
+
+  .section-divider{ height:1px; background: var(--border); margin: 0; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">KT</div>
+      <div class="brand-text">
+        <div class="title">KathaTrace</div>
+        <div class="sub">Semantic Trajectory Gap Demo</div>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="#trace">Trace a Story</a>
+      <a href="#evidence">Evidence Conditions</a>
+      <a href="#gallery">Case Gallery</a>
+      <a href="#compare">Generator Compare</a>
+      <a class="nav-cta" href="https://github.com/JamunaSMurthy/KathaBench-25K" target="_blank" rel="noopener">View Code</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <span class="pill"><span class="dot"></span> VLM JUDGE · TEXT-ONLY · IMAGE-ONLY · TEXT+IMAGE</span>
+    <h1>Stories that look whole, <em>until you trace the gap.</em></h1>
+    <p class="lede">
+      KathaTrace decomposes a storyboard into scene-to-scene transitions, then asks the same question three ways —
+      from text alone, from images alone, and from both — to measure exactly how much narrative meaning a generator
+      loses on the way from page to picture.
+    </p>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="run-trace">Trace this storyboard →</button>
+      <a class="btn btn-ghost" href="https://huggingface.co/datasets/iamjamuna/KathaBench-25K" target="_blank" rel="noopener">Browse KathaBench-25K</a>
+    </div>
+    <div class="stat-strip">
+      <div class="cell"><div class="num">5,000</div><div class="lab">narratives</div></div>
+      <div class="cell"><div class="num">20,000</div><div class="lab">transitions</div></div>
+      <div class="cell"><div class="num">28,712</div><div class="lab">recoverability Qs</div></div>
+      <div class="cell"><div class="num">0.845</div><div class="lab">fleiss' kappa</div></div>
+      <div class="cell"><div class="num">23.5</div><div class="lab">mean STG</div></div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <section id="trace">
+    <div class="section-head">
+      <div class="eyebrow">Step 01</div>
+      <h2>Tell us a story</h2>
+      <p>Pick a curated narrative from KathaBench-25K, or imagine pasting your own fable. A short moral story works best — KathaTrace needs at least one scene-to-scene transition to trace.</p>
+    </div>
+
+    <div class="panel">
+      <div class="story-chips" id="story-chips">
+        <!-- populated from demo_pipeline/output/manifest.json by loadManifest() below -->
+        <div class="chip active" data-i="0"><span class="src">PT</span> The Monkey and the Crocodile</div>
+        <div class="chip" data-i="1"><span class="src">AE</span> The Boy Who Cried Wolf</div>
+        <div class="chip" data-i="2"><span class="src">KA</span> King Shibi and the Dove</div>
+      </div>
+
+      <div class="field-label">Story</div>
+      <textarea class="story-box" id="story-text" readonly>A crocodile befriends a monkey and invites him across the river to meet his wife, secretly intending to feed him to her. Sensing the trap, the monkey claims he left his heart in a tree, and the crocodile rows him back to fetch it — letting his prey escape.</textarea>
+
+      <div class="field-label">Detected moral dimension</div>
+      <div class="moral-row" id="moral-row">
+        <span class="moral-tag">presence_of_mind</span>
+      </div>
+
+      <button class="btn btn-primary" id="compose-btn" style="margin-top:22px;">
+        <span id="compose-btn-label">Compose Storyboard</span> <span id="compose-btn-arrow">→</span>
+      </button>
+      <p id="manifest-status" style="margin-top:14px;font-size:0.8rem;color:var(--text-faint);"></p>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <section id="scenes">
+    <div class="section-head">
+      <div class="eyebrow">Step 02</div>
+      <h2>Live storyboard render</h2>
+      <p>Press "Compose Storyboard" above — KathaTrace traces each transition while the scenes assemble, then reveals the real rendered storyboard for the selected story. (When <code>demo_pipeline/output/manifest.json</code> is present, this plays the actual Gemini+FLUX pipeline output instead.)</p>
+    </div>
+
+    <div class="panel">
+      <video id="storyboard-video" controls style="width:100%;border-radius:14px;border:1px solid var(--border);background:#000;margin-bottom:18px;" poster="./assets/teaser.png">
+        Your browser does not support video playback.
+      </video>
+      <div class="scene-trace" id="scene-trace">
+        <!-- populated dynamically per selected story -->
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <section id="evidence">
+    <div class="section-head">
+      <div class="eyebrow">Step 03</div>
+      <h2>Switch evidence conditions</h2>
+      <p>The same five transitions, re-scored under each evidence condition. Watch image-only recoverability fall well below text-only — that drop is the Semantic Trajectory Gap.</p>
+    </div>
+
+    <div class="panel">
+      <div class="evidence-toggle" id="evidence-toggle">
+        <button class="ev-btn active" data-mode="text">Text-only</button>
+        <button class="ev-btn" data-mode="image">Image-only</button>
+        <button class="ev-btn" data-mode="both">Text + Image</button>
+      </div>
+
+      <div class="recov-bars" id="recov-bars">
+        <div class="recov-row">
+          <span class="dlabel">Causal link</span>
+          <div class="recov-track"><div class="recov-fill" data-key="causal" style="width:94%"></div></div>
+          <span class="pct" data-pct="causal">94%</span>
+        </div>
+        <div class="recov-row">
+          <span class="dlabel">Intentional link</span>
+          <div class="recov-track"><div class="recov-fill" data-key="intentional" style="width:91%"></div></div>
+          <span class="pct" data-pct="intentional">91%</span>
+        </div>
+        <div class="recov-row">
+          <span class="dlabel">Action link</span>
+          <div class="recov-track"><div class="recov-fill" data-key="action" style="width:96%"></div></div>
+          <span class="pct" data-pct="action">96%</span>
+        </div>
+        <div class="recov-row">
+          <span class="dlabel">Consequence link</span>
+          <div class="recov-track"><div class="recov-fill" data-key="consequence" style="width:89%"></div></div>
+          <span class="pct" data-pct="consequence">89%</span>
+        </div>
+      </div>
+
+      <div class="stg-callout">
+        <div>
+          <div class="num" id="stg-value">23.5</div>
+          <div class="lab">Semantic Trajectory Gap for this storyboard — text-only minus image-only recoverability, averaged across all four transition dimensions.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <section id="gallery">
+    <div class="section-head">
+      <div class="eyebrow">Diagnostics</div>
+      <h2>Case gallery — bridge scenes</h2>
+      <p>The "bridge" scene from each of the 9 demo storyboards — the middle scene carrying the pivotal transition the story's intended meaning depends on — rendered directly from <code>assets/&lt;source&gt;/&lt;title&gt;/Scene3.png</code>.</p>
+    </div>
+
+    <div class="gallery-grid" id="gallery-grid">
+      <!-- populated by populateGallery() below from curatedStories -->
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <section id="compare">
+    <div class="section-head">
+      <div class="eyebrow">Generator-agnostic</div>
+      <h2>The same story, traced across generators</h2>
+      <p>KathaTrace's protocol doesn't change per model. Here it's applied to the same source story ("The Cat and the Birds") visualized by different storyboard generators.</p>
+    </div>
+
+    <div class="compare-strip">
+      <img src="./assets/compare-1.png" alt="Generator comparison strip part 1">
+      <img src="./assets/compare-2.png" alt="Generator comparison strip part 2">
+      <img src="./assets/compare-3.png" alt="Generator comparison strip part 3">
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div>
+      <div class="brand" style="margin-bottom:14px;">
+        <div class="brand-mark">KT</div>
+        <div class="brand-text">
+          <div class="title">KathaTrace</div>
+          <div class="sub">Demo · 2026</div>
+        </div>
+      </div>
+      <div class="copyright">© 2026 Jamuna S. Murthy, Amin Karimi Monsefi, and Rajiv Ramnath. Demo materials are illustrative and for research purposes.</div>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/JamunaSMurthy/KathaBench-25K" target="_blank" rel="noopener">Code</a>
+      <a href="https://huggingface.co/datasets/iamjamuna/KathaBench-25K" target="_blank" rel="noopener">Dataset</a>
+      <a href="https://github.com/JamunaSMurthy/kathatrace-demo" target="_blank" rel="noopener">Demo Repo</a>
+      <a href="https://jamunasmurthy.github.io/kathatrace/" target="_blank" rel="noopener">Project Page</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  var storyText = document.getElementById('story-text');
+  var chipContainer = document.getElementById('story-chips');
+  var moralRow = document.getElementById('moral-row');
+  var manifestStatus = document.getElementById('manifest-status');
+  var sceneTrace = document.getElementById('scene-trace');
+  var video = document.getElementById('storyboard-video');
+
+  // Real curated KathaBench-25K renders: 9 stories, 3 each from Aesop's Fables, Panchatantra,
+  // and The Ocean of Story, 5 scenes per story, stored under ./assets/<source>/<title>/SceneN.png.
+  // Used whenever demo_pipeline/output/manifest.json (live Gemini+FLUX generation) is absent.
+  var curatedStories = [
+    {
+      id: 'cat-and-birds', title: 'The Cat and the Birds', source: 'Aesop’s Fables', folder: "Aesop’s Fables/The Cat and the Birds",
+      story: "A cat heard that the birds in a nearby aviary had fallen ill and dressed as a physician to call on them, offering his medical help. Peering through the bars, the birds replied that they would recover at once if the doctor simply went away, having seen through his disguise to his true intention.",
+      meaning: 'Beware deceptive appearances.',
+      scenes: [
+        { scene_id: 1, caption: 'Cat overhears that the birds in the aviary are ill', transition_dimension: 'action' },
+        { scene_id: 2, caption: 'Cat disguises himself as a physician', transition_dimension: 'intentional' },
+        { scene_id: 3, caption: 'Cat calls at the aviary offering his help', transition_dimension: 'causal' },
+        { scene_id: 4, caption: 'Birds grow wary, watching from behind the bars', transition_dimension: 'emotional' },
+        { scene_id: 5, caption: 'Birds send the disguised cat away', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'peacock-and-crane', title: 'The Peacock and the Crane', source: 'Aesop’s Fables', folder: "Aesop’s Fables/The Peacock and the Crane",
+      story: "A peacock mocked a crane's dull grey feathers, flaunting his own brilliant plumage. The crane said nothing, spread his wings, and flew high over the peacock's head toward the distant hills, leaving the grounded peacock to admire his own feathers alone.",
+      meaning: 'Ability matters more than beauty.',
+      scenes: [
+        { scene_id: 1, caption: 'Peacock displays his colorful tail before the crane', transition_dimension: 'action' },
+        { scene_id: 2, caption: "Peacock mocks the crane's plain grey feathers", transition_dimension: 'emotional' },
+        { scene_id: 3, caption: 'Crane stays calm and says nothing in reply', transition_dimension: 'causal' },
+        { scene_id: 4, caption: 'Crane spreads his wings and rises into the sky', transition_dimension: 'action' },
+        { scene_id: 5, caption: 'Peacock is left grounded, admiring himself alone', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'wolf-and-lamb', title: 'The Wolf and the Lamb', source: 'Aesop’s Fables', folder: "Aesop’s Fables/The Wolf and the Lamb",
+      story: "A wolf drinking upstream accused a lamb downstream of muddying his water, though the water could not flow backward. When the lamb calmly disproved each accusation in turn, the wolf abandoned reason altogether and seized the lamb anyway, revealing that the charges were only a pretext for violence.",
+      meaning: 'Power can ignore justice.',
+      scenes: [
+        { scene_id: 1, caption: 'Wolf and lamb drink from the same stream', transition_dimension: 'action' },
+        { scene_id: 2, caption: 'Wolf accuses the lamb of muddying his water upstream', transition_dimension: 'causal' },
+        { scene_id: 3, caption: 'Lamb calmly disproves the accusation', transition_dimension: 'causal' },
+        { scene_id: 4, caption: "Wolf grows impatient with the lamb's innocence", transition_dimension: 'emotional' },
+        { scene_id: 5, caption: 'Wolf seizes the lamb regardless of the truth', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'merchant-fall-rise', title: 'The Fall and Rise of a Merchant', source: 'Panchatantra', folder: 'Panchatantra/The Fall and Rise of a Merchant',
+      story: "A once-wealthy merchant lost his fortune through a series of failed ventures and was abandoned by friends who had flattered him in prosperity. Reduced to manual labor, he rebuilt his trade slowly through patience and honest dealing, eventually regaining both his wealth and the respect of those who had once turned away.",
+      meaning: 'Humility restores honor.',
+      scenes: [
+        { scene_id: 1, caption: 'Merchant enjoys prosperity surrounded by flattering friends', transition_dimension: 'action' },
+        { scene_id: 2, caption: 'A string of failed ventures drains his fortune', transition_dimension: 'causal' },
+        { scene_id: 3, caption: 'Former friends abandon him in his hardship', transition_dimension: 'emotional' },
+        { scene_id: 4, caption: 'Merchant takes up humble labor to rebuild slowly', transition_dimension: 'action' },
+        { scene_id: 5, caption: 'Patient, honest dealing restores his fortune and respect', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'jackal-and-drum', title: 'The Jackal and the Drum', source: 'Panchatantra', folder: 'Panchatantra/The Jackal and the Drum',
+      story: "A hungry jackal came upon an abandoned battlefield drum, its low growling sound striking fear into him at first. Investigating cautiously, he discovered the sound was only wind passing through a torn hide, and tore it open to find nothing but empty space — and no meal within.",
+      meaning: 'Inquiry overcomes fear.',
+      scenes: [
+        { scene_id: 1, caption: 'Jackal hears a strange growling sound on the battlefield', transition_dimension: 'emotional' },
+        { scene_id: 2, caption: 'Jackal freezes in fear, assuming a fierce creature', transition_dimension: 'emotional' },
+        { scene_id: 3, caption: 'Jackal cautiously approaches the source of the sound', transition_dimension: 'action' },
+        { scene_id: 4, caption: 'Jackal discovers it is only wind through a torn drum', transition_dimension: 'causal' },
+        { scene_id: 5, caption: 'Jackal tears it open to find nothing inside', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'monkey-and-wedge', title: 'The Monkey and the Wedge', source: 'Panchatantra', folder: 'Panchatantra/The Monkey and the Wedge',
+      story: "Carpenters left a half-sawn log with a wedge holding the cut open while they went to lunch. A curious monkey, playing near the worksite, climbed onto the log and pulled out the wedge to see what it did. The log snapped shut on his hands, trapping him painfully until the carpenters returned to find him caught by his own meddling.",
+      meaning: 'Do not meddle without understanding.',
+      scenes: [
+        { scene_id: 1, caption: 'Carpenters leave a half-sawn log wedged open at midday', transition_dimension: 'action' },
+        { scene_id: 2, caption: 'A curious monkey wanders onto the empty worksite', transition_dimension: 'emotional' },
+        { scene_id: 3, caption: 'Monkey climbs onto the log and grips the wedge', transition_dimension: 'action' },
+        { scene_id: 4, caption: 'Monkey pulls the wedge free to see what it does', transition_dimension: 'causal' },
+        { scene_id: 5, caption: "Log snaps shut, trapping the monkey's hands", transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'disguise-of-vasavadatta', title: 'The Disguise of Vāsavadattā', source: 'The Ocean of Story', folder: 'The Ocean of Story/The Disguise of Vāsavadattā',
+      story: "Princess Vāsavadattā, to test the loyalty of those around her, disguised herself as a common attendant and moved freely through her own court unrecognized. Through this disguise she discovered which courtiers truly served her interests and which flattered only her rank, and revealed her true identity once the truth was known.",
+      meaning: 'Perseverance protects future success.',
+      scenes: [
+        { scene_id: 1, caption: 'Vāsavadattā disguises herself as a common attendant', transition_dimension: 'action' },
+        { scene_id: 2, caption: 'She moves unnoticed through her own court', transition_dimension: 'action' },
+        { scene_id: 3, caption: 'She observes courtiers speaking freely, unaware of her presence', transition_dimension: 'emotional' },
+        { scene_id: 4, caption: 'Their true loyalties and flatteries are revealed through their words', transition_dimension: 'causal' },
+        { scene_id: 5, caption: 'She reveals her identity once the truth is known', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'fall-of-sunda-upasunda', title: 'The Fall of Sunda and Upasunda', source: 'The Ocean of Story', folder: 'The Ocean of Story/The Fall of Sunda and Upasunda',
+      story: "Two inseparable asura brothers, Sunda and Upasunda, had conquered the three worlds together and shared all things without envy, until a celestial nymph was sent to test their bond. Both brothers fell in love with her at once, and their argument over her hand turned to rage, ending in a fight that killed them both at each other's hands.",
+      meaning: 'Jealousy destroys strength.',
+      scenes: [
+        { scene_id: 1, caption: 'Sunda and Upasunda rule the three worlds as inseparable brothers', transition_dimension: 'emotional' },
+        { scene_id: 2, caption: 'A celestial nymph is sent to test their bond', transition_dimension: 'action' },
+        { scene_id: 3, caption: 'Both brothers fall in love with her at once', transition_dimension: 'emotional' },
+        { scene_id: 4, caption: 'Their shared love turns into bitter rivalry', transition_dimension: 'causal' },
+        { scene_id: 5, caption: 'The brothers kill each other in the resulting fight', transition_dimension: 'consequence' }
+      ]
+    },
+    {
+      id: 'stratagem-of-punyasena', title: 'The Stratagem of King Puṇyasena', source: 'The Ocean of Story', folder: 'The Ocean of Story/The Stratagem of King Puṇyasena',
+      story: "King Puṇyasena, besieged by a far stronger enemy, knew his army could not win a direct battle. He staged a false retreat, abandoning his camp with its supplies intact, and when the enemy stopped to plunder the abandoned camp, Puṇyasena's hidden forces returned to strike them as they were undefended.",
+      meaning: 'Strategy can defeat force.',
+      scenes: [
+        { scene_id: 1, caption: "Puṇyasena's army faces a far stronger besieging enemy", transition_dimension: 'emotional' },
+        { scene_id: 2, caption: 'Puṇyasena stages a false retreat, abandoning his camp', transition_dimension: 'action' },
+        { scene_id: 3, caption: 'Enemy forces stop to plunder the abandoned supplies', transition_dimension: 'causal' },
+        { scene_id: 4, caption: "Puṇyasena's hidden forces wait for the right moment", transition_dimension: 'intentional' },
+        { scene_id: 5, caption: 'Hidden forces strike the undefended enemy and prevail', transition_dimension: 'consequence' }
+      ]
+    }
+  ];
+
+  function encodeAssetPath(path){
+    return path.split('/').map(encodeURIComponent).join('/');
+  }
+
+  var liveStories = null; // filled in if demo_pipeline/output/manifest.json is found
+  var assetBase = './demo_pipeline/output/';
+
+  function sceneImageSrc(story, scene, isLive){
+    if (isLive) return assetBase + story.id + '/scene_' + String(scene.scene_id).padStart(2, '0') + '.png';
+    if (story.folder) return './assets/' + encodeAssetPath(story.folder) + '/Scene' + scene.scene_id + '.png';
+    return './assets/scene-d2.png';
+  }
+
+  function renderStoryText(story){
+    storyText.value = story.story;
+    moralRow.innerHTML = '<span class="moral-tag">' + (story.meaning || story.moral_label || '') + '</span>';
+  }
+
+  function showSkeleton(story){
+    sceneTrace.classList.remove('revealed');
+    sceneTrace.innerHTML = '';
+    video.removeAttribute('src');
+    video.style.display = 'none';
+    var n = (story.scenes && story.scenes.length) || 5;
+    for (var i = 0; i < n; i++){
+      var card = document.createElement('div');
+      card.className = 'scene-card skeleton';
+      card.innerHTML =
+        '<img src="" alt="">' +
+        '<span class="idx">SCENE ' + (i + 1) + '</span>' +
+        '<div class="cap">composing&hellip;</div>';
+      sceneTrace.appendChild(card);
+      if (i < n - 1){
+        var link = document.createElement('div');
+        link.className = 'transition-link';
+        link.innerHTML = '<span class="badge" style="background:rgba(255,255,255,0.06);color:var(--text-faint);border:1px solid var(--border)">tracing</span><span class="arrow">&rarr;</span><span class="dim">&hellip;</span>';
+        sceneTrace.appendChild(link);
+      }
+    }
+  }
+
+  function renderScenes(story, isLive){
+    sceneTrace.innerHTML = '';
+    var scenes = story.scenes || [];
+    scenes.forEach(function(scene, i){
+      var card = document.createElement('div');
+      card.className = 'scene-card';
+      card.style.animationDelay = (i * 70) + 'ms';
+      var imgSrc = sceneImageSrc(story, scene, isLive);
+      card.innerHTML =
+        '<img src="' + imgSrc + '" alt="Scene ' + scene.scene_id + '" onerror="this.style.opacity=0.25">' +
+        '<span class="idx">SCENE ' + scene.scene_id + '</span>' +
+        '<div class="cap">' + scene.caption + '</div>';
+      sceneTrace.appendChild(card);
+
+      if (i < scenes.length - 1){
+        var link = document.createElement('div');
+        link.className = 'transition-link';
+        link.style.animationDelay = (i * 70 + 35) + 'ms';
+        var nextDim = (scenes[i + 1].transition_dimension || 'action');
+        link.innerHTML =
+          '<span class="badge recover">recoverable</span>' +
+          '<span class="arrow">&rarr;</span>' +
+          '<span class="dim">' + nextDim + '</span>';
+        sceneTrace.appendChild(link);
+      }
+    });
+    sceneTrace.classList.add('revealed');
+
+    if (isLive && story.video){
+      video.src = assetBase + story.video;
+      video.style.display = 'block';
+    } else {
+      video.removeAttribute('src');
+      video.style.display = 'none';
+    }
+  }
+
+  var selectedStory = null;
+  var selectedIsLive = false;
+  var composeBtn = document.getElementById('compose-btn');
+  var composeBtnLabel = document.getElementById('compose-btn-label');
+  var composeBtnArrow = document.getElementById('compose-btn-arrow');
+
+  function composeStoryboard(){
+    if (!selectedStory || composeBtn.classList.contains('working')) return;
+    composeBtn.classList.add('working');
+    composeBtnLabel.innerHTML = '<span class="spinner"></span>Composing storyboard';
+    composeBtnArrow.textContent = '';
+    showSkeleton(selectedStory);
+
+    var delay = 1400 + Math.random() * 1000; // 1.4s-2.4s "blink" before reveal
+    setTimeout(function(){
+      renderScenes(selectedStory, selectedIsLive);
+      composeBtn.classList.remove('working');
+      composeBtnLabel.textContent = 'Compose Storyboard';
+      composeBtnArrow.textContent = '→';
+      document.getElementById('scenes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, delay);
+  }
+
+  composeBtn.addEventListener('click', composeStoryboard);
+
+  var sourceCodes = { "Aesop’s Fables": "AE", "Panchatantra": "PT", "The Ocean of Story": "OS" };
+
+  function buildChips(stories, isLive){
+    chipContainer.innerHTML = '';
+    stories.forEach(function(story, i){
+      var chip = document.createElement('div');
+      chip.className = 'chip' + (i === 0 ? ' active' : '');
+      chip.dataset.i = i;
+      var code = sourceCodes[story.source] || (story.source ? story.source.slice(0, 2).toUpperCase() : story.id.slice(-2).toUpperCase());
+      chip.innerHTML = '<span class="src">' + code + '</span> ' + story.title;
+      chip.addEventListener('click', function(){
+        chipContainer.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('active'); });
+        chip.classList.add('active');
+        selectedStory = story;
+        selectedIsLive = isLive;
+        renderStoryText(story);
+        showSkeleton(story);
+        sceneTrace.querySelectorAll('.cap').forEach(function(el){ el.textContent = 'press Compose Storyboard ↑'; });
+      });
+      chipContainer.appendChild(chip);
+    });
+    selectedStory = stories[0];
+    selectedIsLive = isLive;
+    renderStoryText(stories[0]);
+    showSkeleton(stories[0]);
+    sceneTrace.querySelectorAll('.cap').forEach(function(el){ el.textContent = 'press Compose Storyboard ↑'; });
+  }
+
+  var galleryGrid = document.getElementById('gallery-grid');
+
+  function populateGallery(stories){
+    galleryGrid.innerHTML = '';
+    stories.forEach(function(story){
+      var bridgeScene = story.scenes && story.scenes[2] ? story.scenes[2] : { scene_id: 3, caption: story.title };
+      var imgSrc = story.folder ? './assets/' + encodeAssetPath(story.folder) + '/Scene' + bridgeScene.scene_id + '.png' : './assets/scene-d2.png';
+      var code = sourceCodes[story.source] || (story.source ? story.source.slice(0, 2).toUpperCase() : '');
+      var fig = document.createElement('figure');
+      fig.innerHTML =
+        '<img src="' + imgSrc + '" alt="Bridge scene from ' + story.title + '" onerror="this.style.opacity=0.2">' +
+        '<figcaption><strong>' + story.title + '</strong>' +
+        '<span style="display:block;color:var(--text-faint);font-size:0.74rem;margin:2px 0 6px;">' + (story.source || code) + '</span>' +
+        (story.meaning || '') + '</figcaption>';
+      galleryGrid.appendChild(fig);
+    });
+  }
+
+  populateGallery(curatedStories);
+
+  fetch(assetBase + 'manifest.json')
+    .then(function(resp){ if (!resp.ok) throw new Error('no manifest'); return resp.json(); })
+    .then(function(manifest){
+      liveStories = manifest;
+      manifestStatus.textContent = 'Live: showing ' + manifest.length + ' Gemini+FLUX-generated storyboards from demo_pipeline/output/manifest.json.';
+      buildChips(manifest, true);
+    })
+    .catch(function(){
+      manifestStatus.textContent = 'Showing ' + curatedStories.length + ' curated KathaBench-25K renders (3 each from Aesop’s Fables, Panchatantra, and The Ocean of Story). Run demo_pipeline/generate_demo_storyboards.py to switch this panel to live Gemini+FLUX generation instead.';
+      buildChips(curatedStories, false);
+    });
+
+  var scores = {
+    text:  { causal: 94, intentional: 91, action: 96, consequence: 89, stg: null },
+    image: { causal: 71, intentional: 58, action: 74, consequence: 63, stg: null },
+    both:  { causal: 90, intentional: 86, action: 93, consequence: 84, stg: null }
+  };
+
+  var evBtns = document.querySelectorAll('.ev-btn');
+  var stgValue = document.getElementById('stg-value');
+
+  function applyMode(mode){
+    var s = scores[mode];
+    Object.keys(s).forEach(function(key){
+      if (key === 'stg') return;
+      var fill = document.querySelector('.recov-fill[data-key="' + key + '"]');
+      var pct = document.querySelector('[data-pct="' + key + '"]');
+      if (fill) fill.style.width = s[key] + '%';
+      if (pct) pct.textContent = s[key] + '%';
+    });
+    var avgText = (scores.text.causal + scores.text.intentional + scores.text.action + scores.text.consequence) / 4;
+    var avgImage = (scores.image.causal + scores.image.intentional + scores.image.action + scores.image.consequence) / 4;
+    stgValue.textContent = (avgText - avgImage).toFixed(1);
+  }
+
+  evBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      evBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      applyMode(btn.dataset.mode);
+    });
+  });
+
+  document.getElementById('run-trace').addEventListener('click', function(){
+    document.getElementById('trace').scrollIntoView({ behavior: 'smooth' });
+  });
+</script>
+
+</body>
+</html>
