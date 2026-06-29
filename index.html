@@ -265,6 +265,11 @@
   .gallery-grid img{ width:100%; height:auto; max-height: 280px; object-fit: contain; display:block; background: var(--panel-2); }
   .gallery-grid figcaption{ padding: 14px 16px; font-size: 0.82rem; color: var(--text-dim); }
   .gallery-grid figcaption strong{ display:block; color: var(--text); font-size: 0.88rem; margin-bottom: 3px; }
+  .gallery-grid .gallery-caption{ margin-top: 8px; color: var(--text-dim); line-height: 1.5; }
+  .bridge-spotlight{ margin-top: 18px; padding: 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--panel-2); }
+  .bridge-spotlight .bridge-label{ font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-3); margin-bottom: 10px; }
+  .bridge-spotlight img{ width:100%; max-height: 240px; object-fit: contain; display:block; border-radius: 12px; background: var(--panel); }
+  .bridge-spotlight .bridge-caption{ margin-top: 10px; color: var(--text-dim); line-height: 1.5; }
   @media (max-width: 880px){ .gallery-grid{ grid-template-columns: 1fr 1fr; } }
   @media (max-width: 560px){ .gallery-grid{ grid-template-columns: 1fr; } }
 
@@ -371,6 +376,7 @@
       <div class="scene-trace" id="scene-trace">
         <!-- populated dynamically per selected story -->
       </div>
+      <div class="bridge-spotlight" id="bridge-spotlight" style="display:none;"></div>
     </div>
   </section>
 
@@ -465,6 +471,7 @@
   var moralRow = document.getElementById('moral-row');
   var manifestStatus = document.getElementById('manifest-status');
   var sceneTrace = document.getElementById('scene-trace');
+  var bridgeSpotlight = document.getElementById('bridge-spotlight');
   var video = document.getElementById('storyboard-video');
 
   // Real curated KathaBench-25K renders: 9 stories, 3 each from Aesop's Fables, Panchatantra,
@@ -599,9 +606,24 @@
     moralRow.innerHTML = '<span class="moral-tag">' + (story.meaning || story.moral_label || '') + '</span>';
   }
 
+  function getSceneCaption(scene, fallback){
+    if (!scene) return fallback || 'Scene caption unavailable';
+    if (scene.caption) return scene.caption;
+    if (scene.description) return scene.description;
+    if (scene.text) return scene.text;
+    return fallback || ('Scene ' + (scene.scene_id || '') + ' caption unavailable');
+  }
+
+  function getBridgeScene(story){
+    if (!story || !story.scenes || !story.scenes.length) return null;
+    return story.scenes[2] || story.scenes[Math.floor(story.scenes.length / 2)] || story.scenes[0];
+  }
+
   function showSkeleton(story){
     sceneTrace.classList.remove('revealed');
     sceneTrace.innerHTML = '';
+    bridgeSpotlight.innerHTML = '';
+    bridgeSpotlight.style.display = 'none';
     video.removeAttribute('src');
     video.style.display = 'none';
     var n = (story.scenes && story.scenes.length) || 5;
@@ -624,16 +646,19 @@
 
   function renderScenes(story, isLive){
     sceneTrace.innerHTML = '';
+    bridgeSpotlight.innerHTML = '';
+    bridgeSpotlight.style.display = 'none';
     var scenes = story.scenes || [];
     scenes.forEach(function(scene, i){
       var card = document.createElement('div');
       card.className = 'scene-card';
       card.style.animationDelay = (i * 70) + 'ms';
       var imgSrc = sceneImageSrc(story, scene, isLive);
+      var caption = getSceneCaption(scene, 'Scene ' + scene.scene_id);
       card.innerHTML =
         '<img src="' + imgSrc + '" alt="Scene ' + scene.scene_id + '" onerror="this.style.opacity=0.25">' +
         '<span class="idx">SCENE ' + scene.scene_id + '</span>' +
-        '<div class="cap">' + scene.caption + '</div>';
+        '<div class="cap">' + caption + '</div>';
       sceneTrace.appendChild(card);
 
       if (i < scenes.length - 1){
@@ -649,6 +674,16 @@
       }
     });
     sceneTrace.classList.add('revealed');
+
+    var bridgeScene = getBridgeScene(story);
+    if (bridgeScene){
+      var bridgeImgSrc = sceneImageSrc(story, bridgeScene, isLive);
+      bridgeSpotlight.innerHTML =
+        '<div class="bridge-label">Bridge scene</div>' +
+        '<img src="' + bridgeImgSrc + '" alt="Bridge scene for ' + (story.title || 'story') + '" onerror="this.style.opacity=0.25">' +
+        '<div class="bridge-caption">' + getSceneCaption(bridgeScene, 'Bridge scene') + '</div>';
+      bridgeSpotlight.style.display = 'block';
+    }
 
     if (isLive && story.video){
       video.src = assetBase + story.video;
@@ -717,15 +752,17 @@
   function populateGallery(stories){
     galleryGrid.innerHTML = '';
     stories.forEach(function(story){
-      var bridgeScene = story.scenes && story.scenes[2] ? story.scenes[2] : { scene_id: 3, caption: story.title };
+      var bridgeScene = story.scenes && story.scenes[2] ? story.scenes[2] : (story.scenes && story.scenes.length ? story.scenes[Math.floor(story.scenes.length / 2)] : { scene_id: 3, caption: story.title });
       var imgSrc = story.folder ? './assets/' + encodeAssetPath(story.folder) + '/Scene' + bridgeScene.scene_id + '.png' : './assets/scene-d2.png';
       var code = sourceCodes[story.source] || (story.source ? story.source.slice(0, 2).toUpperCase() : '');
       var fig = document.createElement('figure');
+      var captionText = 'Scene ' + bridgeScene.scene_id + ': ' + getSceneCaption(bridgeScene, story.meaning || story.title);
       fig.innerHTML =
         '<img src="' + imgSrc + '" alt="Bridge scene from ' + story.title + '" onerror="this.style.opacity=0.2">' +
         '<figcaption><strong>' + story.title + '</strong>' +
         '<span style="display:block;color:var(--text-faint);font-size:0.74rem;margin:2px 0 6px;">' + (story.source || code) + '</span>' +
-        (story.meaning || '') + '</figcaption>';
+        '<div class="gallery-caption">' + captionText + '</div>' +
+        (story.meaning ? '<div style="margin-top:6px;color:var(--text-faint);">' + story.meaning + '</div>' : '') + '</figcaption>';
       galleryGrid.appendChild(fig);
     });
   }
