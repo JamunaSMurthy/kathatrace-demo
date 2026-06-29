@@ -261,16 +261,12 @@
 
   /* ---------- Gallery ---------- */
   .gallery-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .gallery-grid figure{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow:hidden; }
-  .gallery-grid img{ width:100%; height: 170px; object-fit: cover; }
+  .gallery-grid figure{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow:hidden; display:flex; flex-direction:column; }
+  .gallery-grid img{ width:100%; height:auto; max-height: 280px; object-fit: contain; display:block; background: var(--panel-2); }
   .gallery-grid figcaption{ padding: 14px 16px; font-size: 0.82rem; color: var(--text-dim); }
   .gallery-grid figcaption strong{ display:block; color: var(--text); font-size: 0.88rem; margin-bottom: 3px; }
   @media (max-width: 880px){ .gallery-grid{ grid-template-columns: 1fr 1fr; } }
   @media (max-width: 560px){ .gallery-grid{ grid-template-columns: 1fr; } }
-
-  /* ---------- Compare strip ---------- */
-  .compare-strip{ display:flex; gap: 18px; overflow-x:auto; padding-bottom: 10px; }
-  .compare-strip img{ flex: 0 0 min(420px, 80vw); border-radius: 14px; border: 1px solid var(--border); }
 
   /* ---------- Footer ---------- */
   footer{ border-top: 1px solid var(--border); padding: 40px 0 60px; margin-top: 30px; }
@@ -437,22 +433,6 @@
 
     <div class="gallery-grid" id="gallery-grid">
       <!-- populated by populateGallery() below from curatedStories -->
-    </div>
-  </section>
-
-  <div class="section-divider"></div>
-
-  <section id="compare">
-    <div class="section-head">
-      <div class="eyebrow">Generator-agnostic</div>
-      <h2>The same story, traced across generators</h2>
-      <p>KathaTrace's protocol doesn't change per model. Here it's applied to the same source story ("The Cat and the Birds") visualized by different storyboard generators.</p>
-    </div>
-
-    <div class="compare-strip">
-      <img src="./assets/compare-1.png" alt="Generator comparison strip part 1">
-      <img src="./assets/compare-2.png" alt="Generator comparison strip part 2">
-      <img src="./assets/compare-3.png" alt="Generator comparison strip part 3">
     </div>
   </section>
 
