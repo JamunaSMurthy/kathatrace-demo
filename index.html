@@ -260,12 +260,61 @@
   .stg-callout .lab{ font-size: 0.85rem; color: var(--text-dim); max-width: 40ch; }
 
   /* ---------- Gallery ---------- */
-  .gallery-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .gallery-grid figure{ background: var(--panel); border: 1px solid var(--border); border-radius: 14px; overflow:hidden; display:flex; flex-direction:column; }
-  .gallery-grid img{ width:100%; height:auto; max-height: 280px; object-fit: contain; display:block; background: var(--panel-2); }
-  .gallery-grid figcaption{ padding: 14px 16px; font-size: 0.82rem; color: var(--text-dim); }
-  .gallery-grid figcaption strong{ display:block; color: var(--text); font-size: 0.88rem; margin-bottom: 3px; }
-  .gallery-grid .gallery-caption{ margin-top: 8px; color: var(--text-dim); line-height: 1.5; }
+  .gallery-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .gallery-grid figure{ background: var(--panel); border: 1px solid var(--border); border-radius: 18px; overflow:hidden; display:flex; flex-direction:column; }
+
+  .flipbook{
+    position:relative; width:100%; aspect-ratio: 4 / 5;
+    perspective: 1200px; overflow:hidden; background: var(--panel-2);
+  }
+  .flipbook::after{
+    content:''; position:absolute; inset:0; border-radius: inherit; pointer-events:none;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    animation: gallery-blink 4s ease-in-out infinite;
+  }
+  @keyframes gallery-blink{
+    0%, 100%{ box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 0 0 0 rgba(236,72,153,0); }
+    50%{ box-shadow: inset 0 0 0 1px rgba(236,72,153,0.35), 0 0 26px 2px rgba(236,72,153,0.18); }
+  }
+  .flipbook .flip-img{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    backface-visibility:hidden; transform-origin:center;
+    animation-name: story-flip; animation-duration: 10s; animation-iteration-count: infinite;
+    animation-timing-function: cubic-bezier(.45,0,.2,1);
+  }
+  .flipbook .flip-img:nth-child(1){ animation-delay: 0s; }
+  .flipbook .flip-img:nth-child(2){ animation-delay: 2s; }
+  .flipbook .flip-img:nth-child(3){ animation-delay: 4s; }
+  .flipbook .flip-img:nth-child(4){ animation-delay: 6s; }
+  .flipbook .flip-img:nth-child(5){ animation-delay: 8s; }
+  @keyframes story-flip{
+    0%      { opacity:0; transform: rotateY(85deg) scale(0.92); }
+    4%      { opacity:1; transform: rotateY(0deg) scale(1); }
+    15%     { opacity:1; transform: rotateY(0deg) scale(1); }
+    20%     { opacity:0; transform: rotateY(-85deg) scale(0.92); }
+    100%    { opacity:0; transform: rotateY(-85deg) scale(0.92); }
+  }
+  .flipbook .scene-pips{
+    position:absolute; left:0; right:0; bottom:10px; display:flex; justify-content:center; gap:6px; z-index:2;
+  }
+  .flipbook .scene-pips span{
+    width:6px; height:6px; border-radius:50%; background: rgba(255,255,255,0.28);
+    animation-name: pip-pulse; animation-duration: 10s; animation-iteration-count: infinite;
+  }
+  .flipbook .scene-pips span:nth-child(1){ animation-delay: 0s; }
+  .flipbook .scene-pips span:nth-child(2){ animation-delay: 2s; }
+  .flipbook .scene-pips span:nth-child(3){ animation-delay: 4s; }
+  .flipbook .scene-pips span:nth-child(4){ animation-delay: 6s; }
+  .flipbook .scene-pips span:nth-child(5){ animation-delay: 8s; }
+  @keyframes pip-pulse{
+    0%, 20%{ background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); width:16px; }
+    20.001%, 100%{ background: rgba(255,255,255,0.28); box-shadow:none; width:6px; }
+  }
+
+  .gallery-grid figcaption{ padding: 16px 18px; font-size: 0.82rem; color: var(--text-dim); }
+  .gallery-grid figcaption strong{ display:block; color: var(--text); font-size: 0.95rem; margin-bottom: 3px; }
+  .gallery-grid .gallery-caption{ margin-top: 8px; color: var(--gold); line-height: 1.5; font-style: italic; }
+
   .bridge-spotlight{ margin-top: 18px; padding: 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--panel-2); }
   .bridge-spotlight .bridge-label{ font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-3); margin-bottom: 10px; }
   .bridge-spotlight img{ width:100%; max-height: 240px; object-fit: contain; display:block; border-radius: 12px; background: var(--panel); }
@@ -297,9 +346,9 @@
     </div>
     <nav class="nav-links">
       <a href="#trace">Trace a Story</a>
+      <a href="#scenes">Storyboard</a>
       <a href="#evidence">Evidence Conditions</a>
       <a href="#gallery">Case Gallery</a>
-      <a href="#compare">Generator Compare</a>
       <a class="nav-cta" href="https://github.com/JamunaSMurthy/KathaBench-25K" target="_blank" rel="noopener">View Code</a>
     </nav>
   </div>
@@ -339,18 +388,17 @@
 
     <div class="panel">
       <div class="story-chips" id="story-chips">
-        <!-- populated from demo_pipeline/output/manifest.json by loadManifest() below -->
-        <div class="chip active" data-i="0"><span class="src">PT</span> The Monkey and the Crocodile</div>
-        <div class="chip" data-i="1"><span class="src">AE</span> The Boy Who Cried Wolf</div>
-        <div class="chip" data-i="2"><span class="src">KA</span> King Shibi and the Dove</div>
+        <div class="chip active" data-i="0"><span class="src">AE</span> The Cat and the Birds</div>
+        <div class="chip" data-i="1"><span class="src">AE</span> The Peacock and the Crane</div>
+        <div class="chip" data-i="2"><span class="src">AE</span> The Wolf and the Lamb</div>
       </div>
 
       <div class="field-label">Story</div>
-      <textarea class="story-box" id="story-text" readonly>A crocodile befriends a monkey and invites him across the river to meet his wife, secretly intending to feed him to her. Sensing the trap, the monkey claims he left his heart in a tree, and the crocodile rows him back to fetch it — letting his prey escape.</textarea>
+      <textarea class="story-box" id="story-text" readonly>A cat heard that the birds in a nearby aviary had fallen ill and dressed as a physician to call on them, offering his medical help. Peering through the bars, the birds replied that they would recover at once if the doctor simply went away, having seen through his disguise to his true intention.</textarea>
 
-      <div class="field-label">Detected moral dimension</div>
+      <div class="field-label">Meaning</div>
       <div class="moral-row" id="moral-row">
-        <span class="moral-tag">presence_of_mind</span>
+        <span class="moral-tag">Beware deceptive appearances.</span>
       </div>
 
       <button class="btn btn-primary" id="compose-btn" style="margin-top:22px;">
@@ -366,11 +414,11 @@
     <div class="section-head">
       <div class="eyebrow">Step 02</div>
       <h2>Live storyboard render</h2>
-      <p>Press "Compose Storyboard" above — KathaTrace traces each transition while the scenes assemble, then reveals the real rendered storyboard for the selected story. (When <code>demo_pipeline/output/manifest.json</code> is present, this plays the actual Gemini+FLUX pipeline output instead.)</p>
+      <p>Press "Compose Storyboard" above — KathaTrace traces each transition while the scenes assemble, then reveals the rendered storyboard for the selected story.</p>
     </div>
 
     <div class="panel">
-      <video id="storyboard-video" controls style="width:100%;border-radius:14px;border:1px solid var(--border);background:#000;margin-bottom:18px;" poster="./assets/teaser.png">
+      <video id="storyboard-video" controls style="display:none;width:100%;border-radius:14px;border:1px solid var(--border);background:#000;margin-bottom:18px;">
         Your browser does not support video playback.
       </video>
       <div class="scene-trace" id="scene-trace">
@@ -433,8 +481,8 @@
   <section id="gallery">
     <div class="section-head">
       <div class="eyebrow">Diagnostics</div>
-      <h2>Case gallery — bridge scenes</h2>
-      <p>The "bridge" scene from each of the 9 demo storyboards — the middle scene carrying the pivotal transition the story's intended meaning depends on — rendered directly from <code>assets/&lt;source&gt;/&lt;title&gt;/Scene3.png</code>.</p>
+      <h2>Case gallery — full storyboards</h2>
+      <p>Six complete five-scene storyboards, two from each source collection, flipping automatically through every scene in sequence.</p>
     </div>
 
     <div class="gallery-grid" id="gallery-grid">
@@ -749,20 +797,37 @@
 
   var galleryGrid = document.getElementById('gallery-grid');
 
+  // One flagship full storyboard per source collection, animated as a flipbook.
+  var galleryFlagshipIds = [
+    'cat-and-birds', 'peacock-and-crane',
+    'monkey-and-wedge', 'jackal-and-drum',
+    'stratagem-of-punyasena', 'disguise-of-vasavadatta'
+  ];
+
   function populateGallery(stories){
     galleryGrid.innerHTML = '';
-    stories.forEach(function(story){
-      var bridgeScene = story.scenes && story.scenes[2] ? story.scenes[2] : (story.scenes && story.scenes.length ? story.scenes[Math.floor(story.scenes.length / 2)] : { scene_id: 3, caption: story.title });
-      var imgSrc = story.folder ? './assets/' + encodeAssetPath(story.folder) + '/Scene' + bridgeScene.scene_id + '.png' : './assets/scene-d2.png';
+    var flagships = galleryFlagshipIds
+      .map(function(id){ return stories.filter(function(s){ return s.id === id; })[0]; })
+      .filter(Boolean);
+    if (!flagships.length) flagships = stories.slice(0, 3);
+
+    flagships.forEach(function(story){
       var code = sourceCodes[story.source] || (story.source ? story.source.slice(0, 2).toUpperCase() : '');
+      var scenes = story.scenes || [];
+
+      var flipImgs = scenes.map(function(scene){
+        var imgSrc = story.folder ? './assets/' + encodeAssetPath(story.folder) + '/Scene' + scene.scene_id + '.png' : './assets/scene-d2.png';
+        return '<img class="flip-img" src="' + imgSrc + '" alt="' + story.title + ' — scene ' + scene.scene_id + '" onerror="this.style.opacity=0.15">';
+      }).join('');
+
+      var pips = scenes.map(function(){ return '<span></span>'; }).join('');
+
       var fig = document.createElement('figure');
-      var captionText = 'Scene ' + bridgeScene.scene_id + ': ' + getSceneCaption(bridgeScene, story.meaning || story.title);
       fig.innerHTML =
-        '<img src="' + imgSrc + '" alt="Bridge scene from ' + story.title + '" onerror="this.style.opacity=0.2">' +
+        '<div class="flipbook">' + flipImgs + '<div class="scene-pips">' + pips + '</div></div>' +
         '<figcaption><strong>' + story.title + '</strong>' +
-        '<span style="display:block;color:var(--text-faint);font-size:0.74rem;margin:2px 0 6px;">' + (story.source || code) + '</span>' +
-        '<div class="gallery-caption">' + captionText + '</div>' +
-        (story.meaning ? '<div style="margin-top:6px;color:var(--text-faint);">' + story.meaning + '</div>' : '') + '</figcaption>';
+        '<span style="display:block;color:var(--text-faint);font-size:0.74rem;margin:2px 0 6px;">' + (story.source || code) + ' &middot; ' + scenes.length + ' scenes</span>' +
+        (story.meaning ? '<div class="gallery-caption">' + story.meaning + '</div>' : '') + '</figcaption>';
       galleryGrid.appendChild(fig);
     });
   }
@@ -773,11 +838,11 @@
     .then(function(resp){ if (!resp.ok) throw new Error('no manifest'); return resp.json(); })
     .then(function(manifest){
       liveStories = manifest;
-      manifestStatus.textContent = 'Live: showing ' + manifest.length + ' Gemini+FLUX-generated storyboards from demo_pipeline/output/manifest.json.';
+      manifestStatus.textContent = manifest.length + ' AI-generated storyboards, ready to trace.';
       buildChips(manifest, true);
     })
     .catch(function(){
-      manifestStatus.textContent = 'Showing ' + curatedStories.length + ' curated KathaBench-25K renders (3 each from Aesop’s Fables, Panchatantra, and The Ocean of Story). Run demo_pipeline/generate_demo_storyboards.py to switch this panel to live Gemini+FLUX generation instead.';
+      manifestStatus.textContent = curatedStories.length + ' curated storyboards from KathaBench-25K — Aesop’s Fables, Panchatantra, and The Ocean of Story.';
       buildChips(curatedStories, false);
     });
 
